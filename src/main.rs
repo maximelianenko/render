@@ -1,7 +1,7 @@
 
 use actix_multipart::{form::MultipartFormConfig, MultipartError};
 
-use actix_web::{error::Error, App, HttpRequest, HttpServer};
+use actix_web::{error::Error, http::StatusCode, web, App, HttpRequest, HttpResponse, HttpServer};
 
 // use tokio::join;
 use renderenko::post::render::render_config;
@@ -22,7 +22,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .configure(render_config)
             .app_data(MultipartFormConfig::default().error_handler(error_handler))
-            // .route("/hey", web::get().to(manual_hello))
+            .route("/", web::get().to(|| HttpResponse::build(StatusCode::OK)))
     })
     .bind((ip,port))?;
     let task_handle = tokio::spawn(server.run());
