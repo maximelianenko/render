@@ -16,8 +16,8 @@ fn error_handler(err:MultipartError, _req: &HttpRequest) -> Error {
 async fn main() -> std::io::Result<()> {
     // let config:MultipartFormConfig = MultipartFormConfig::default();
     // config.error_handler(error_handler);
-    let ip = "127.0.0.1";
-    let port = 3009;
+    let ip = "0.0.0.0";
+    let port = 3000;
     let server = HttpServer::new(|| {
         App::new()
             .configure(render_config)
