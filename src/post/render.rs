@@ -3,6 +3,7 @@ use std::{borrow::Borrow, fs::File, io::{BufReader, BufWriter}, path::Path, sync
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{http::StatusCode, web, HttpResponse, Responder};
 
+use axum::http::header;
 use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder, ImageFormat};
 use serde::Serialize;
 use http_serde::http::StatusCode as SerdeStatusCode;
@@ -232,6 +233,8 @@ pub async fn render(MultipartForm(form): MultipartForm<UploadForm>,data: web::Da
             .unwrap();
         return HttpResponse::build(StatusCode::OK)
                 .content_type("image/png")
+                .append_header(("Access-Control-Allow-Origin","*"))
+                .append_header(("Access-Control-Allow-Methods", "POST"))
                 .body(result_buf.into_inner().unwrap())
     } else {
         let image = rendered.borrow().result();
@@ -246,6 +249,8 @@ pub async fn render(MultipartForm(form): MultipartForm<UploadForm>,data: web::Da
             .unwrap();
         return HttpResponse::build(StatusCode::OK)
                 .content_type("image/png")
+                .append_header(("Access-Control-Allow-Origin","*"))
+                .append_header(("Access-Control-Allow-Methods", "POST"))
                 // .insert_header(("Access-Control-Allow-Origin", "*"))
                 .body(result_buf.into_inner().unwrap())
     }
