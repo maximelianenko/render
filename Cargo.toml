@@ -32,4 +32,5 @@ tokio = { version = "1", features = ["full","rt-multi-thread"] }
 tracing-subscriber = "0.3.18"
 actix-multipart = "0.6.2"
 derive_more = "0.99.17"
+http-serde = "2.1.1"
 # tokio = "1.39.2"

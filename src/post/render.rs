@@ -4,6 +4,8 @@ use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{http::StatusCode, web, HttpResponse, Responder};
 
 use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder, ImageFormat};
+use serde::Serialize;
+use http_serde::http::StatusCode as SerdeStatusCode;
 use crate::rend::{builder, misc::mesh::load_from_obj, types::MeshV4Plus};
 pub struct AppState {
     // ferris: Renderenko,
@@ -112,28 +114,55 @@ pub fn render_config(cfg: &mut web::ServiceConfig) {
                 .route(web::post().to(render))
         );
 }
+#[derive(Serialize, Debug)]
+pub struct APIResponse {
+    #[serde(with = "http_serde::status_code")]
+    pub code: SerdeStatusCode,
+    pub message: String,
+    pub description: String
+}
+
 pub async fn render(MultipartForm(form): MultipartForm<UploadForm>,data: web::Data<AppState>) -> impl Responder {
     if form.skin_texture.content_type.is_none() || form.skin_texture.content_type.unwrap() != "image/png" {
-        return HttpResponse::build(StatusCode::BAD_REQUEST).body("Only png images are supported");
+        return HttpResponse::build(StatusCode::BAD_REQUEST).json(APIResponse {
+            code: SerdeStatusCode::BAD_REQUEST,
+            message: String::from("texture must be in png format"),
+            description: String::from("texture must be an image in png format and have size up to ~1MB")
+        })
+        // return HttpResponse::build(StatusCode::BAD_REQUEST).body("Only png images are supported");
     }
     
     let file = match File::open(form.skin_texture.file) {
-        Err(error) => {
-            return HttpResponse::build(StatusCode::BAD_REQUEST).body(format!("Something wrong with file. \n Error: {}", error));
+        Err(_error) => {
+            return HttpResponse::build(StatusCode::BAD_REQUEST).json(APIResponse {
+                code: SerdeStatusCode::BAD_REQUEST,
+                message: String::from("there's something wrong with the texture"),
+                description: String::from("texture must be in png format and up to ~1MB in size")
+            })
+            // return HttpResponse::build(StatusCode::BAD_REQUEST).body(format!("Something wrong with file. \n Error: {}", error));
         }
         Ok(value) => value
     };
     let texture = match image::load(BufReader::new(file), ImageFormat::Png) {
-        Err(error) => {
-            return HttpResponse::build(StatusCode::BAD_REQUEST).body(format!("Something wrong with file. \n Error: {}", error));
+        Err(_error) => {
+            return HttpResponse::build(StatusCode::BAD_REQUEST).json(APIResponse {
+                code: SerdeStatusCode::BAD_REQUEST,
+                message: String::from("there's something wrong with the texture"),
+                description: String::from("texture must be in png format and up to ~1MB in size")
+            })
         }
         Ok(value) => value
     };
 
     let texture_aspect_ratio = texture.width() / texture.height();
     // println!("{}",texture_aspect_ratio);
+
     if texture_aspect_ratio != 1 && texture_aspect_ratio != 2 {
-        return HttpResponse::build(StatusCode::BAD_REQUEST).body("Texture aspect ratio needs to be 1/1 or 2/1 (64x64, 256x256, 64x32 etc...)");
+        return HttpResponse::build(StatusCode::BAD_REQUEST).json(APIResponse {
+            code: SerdeStatusCode::BAD_REQUEST,
+            message: String::from("texture have wrong aspect ratio"),
+            description: String::from("Texture aspect-ratio needs to be 1/1 or 2/1 (64x64, 256x256, 64x32 etc...)")
+        })
     }
 
     let width = minmax_text_unwrap_or!(10,1000,form.width,100);
@@ -154,24 +183,24 @@ pub async fn render(MultipartForm(form): MultipartForm<UploadForm>,data: web::Da
         }
     }
 
-    let fov = minmax_text_unwrap_or!(10.0, 120.0, form.fov, 30.0);
+    let fov = minmax_text_unwrap_or!(1.0, 120.0, form.fov, 30.0);
 
-    let far = minmax_text_unwrap_or!(0.0,1000.0,form.far, 1000.0);
-    let near = minmax_text_unwrap_or!(0.0,1000.0,form.near, 0.1);
+    let far = minmax_text_unwrap_or!(1.0,1000.0,form.far, 1000.0);
+    let near = minmax_text_unwrap_or!(0.1,1000.0,form.near, 0.1);
 
-    let cam_pos_x = minmax_text_unwrap_or!(0.0,1000.0,form.cam_pos_x,0.0);
-    let cam_pos_y = minmax_text_unwrap_or!(0.0,1000.0,form.cam_pos_y,0.0);
-    let cam_pos_z = minmax_text_unwrap_or!(0.0,1000.0,form.cam_pos_z,0.0);
+    let cam_pos_x = minmax_text_unwrap_or!(-1000.0,1000.0,form.cam_pos_x,0.0);
+    let cam_pos_y = minmax_text_unwrap_or!(-1000.0,1000.0,form.cam_pos_y,0.0);
+    let cam_pos_z = minmax_text_unwrap_or!(-1000.0,1000.0,form.cam_pos_z,0.0);
 
-    let cam_rot_x = minmax_text_unwrap_or!(0.0,360.0,form.cam_rot_x,0.0);
-    let cam_rot_y = minmax_text_unwrap_or!(0.0,360.0,form.cam_rot_y,0.0);
+    let cam_rot_x = minmax_text_unwrap_or!(-360.0,360.0,form.cam_rot_x,0.0);
+    let cam_rot_y = minmax_text_unwrap_or!(-360.0,360.0,form.cam_rot_y,0.0);
 
-    let mod_pos_x = minmax_text_unwrap_or!(0.0,1000.0,form.mod_pos_x,0.0);
-    let mod_pos_y = minmax_text_unwrap_or!(0.0,1000.0,form.mod_pos_y,0.25);
-    let mod_pos_z = minmax_text_unwrap_or!(0.0,1000.0,form.mod_pos_z,1.25);
+    let mod_pos_x = minmax_text_unwrap_or!(-1000.0,1000.0,form.mod_pos_x,0.0);
+    let mod_pos_y = minmax_text_unwrap_or!(-1000.0,1000.0,form.mod_pos_y,0.25);
+    let mod_pos_z = minmax_text_unwrap_or!(-1000.0,1000.0,form.mod_pos_z,1.25);
 
-    let mod_rot_x = minmax_text_unwrap_or!(0.0,360.0,form.mod_rot_x,0.0);
-    let mod_rot_y = minmax_text_unwrap_or!(0.0,360.0,form.mod_rot_y,-15.0);
+    let mod_rot_x = minmax_text_unwrap_or!(-360.0,360.0,form.mod_rot_x,0.0);
+    let mod_rot_y = minmax_text_unwrap_or!(-360.0,360.0,form.mod_rot_y,-15.0);
 
     let mesh = match skin_type {
         Skin::Alex => Arc::clone(&data.alex),

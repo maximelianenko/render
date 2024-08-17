@@ -4,12 +4,11 @@ use actix_multipart::{form::MultipartFormConfig, MultipartError};
 use actix_web::{error::Error, http::StatusCode, web, App, HttpRequest, HttpResponse, HttpServer};
 
 // use tokio::join;
-use renderenko::post::render::render_config;
+use renderenko::post::render::{render_config, APIResponse};
+use http_serde::http::StatusCode as SerdeStatusCode;
 
 fn error_handler(err:MultipartError, _req: &HttpRequest) -> Error {
-    // println!("Error: {:?}\n Request: {:?}",err,req);
     Error::from(err)
-    // Error::from(RenderenkoError {name: "something"})
 }
 
 #[actix_web::main] 
