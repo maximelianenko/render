@@ -22,7 +22,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .configure(render_config)
             .app_data(MultipartFormConfig::default().error_handler(error_handler))
-            .route("/", web::get().to(|| HttpResponse::build(StatusCode::OK)))
+            // .route("/", web::get().to(|| HttpResponse::build(StatusCode::OK)))
     })
     .bind((ip,port))?;
     let task_handle = tokio::spawn(server.run());

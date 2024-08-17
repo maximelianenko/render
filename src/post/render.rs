@@ -108,7 +108,7 @@ pub fn render_config(cfg: &mut web::ServiceConfig) {
             steve_old: Arc::new(load_from_obj(Path::new("data/model/default/steve_old.obj")).unwrap())
         }))
         .service(
-            web::resource("/render")
+            web::resource("/v1")
                 .route(web::post().to(render))
         );
 }
