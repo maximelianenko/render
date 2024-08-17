@@ -2,7 +2,7 @@ use core::fmt;
 use std::{path::Path, sync::Arc};
 
 use fast_image_resize::{images::Image, IntoImageView, ResizeAlg, ResizeOptions, Resizer};
-use image::{io::Reader, save_buffer, DynamicImage, ExtendedColorType, ImageResult};
+use image::{ImageReader, save_buffer, DynamicImage, ExtendedColorType, ImageResult};
 use nalgebra::{Matrix4, Vector4};
 use uuid::Uuid;
 
@@ -77,7 +77,7 @@ impl Renderenko {
         return self;
     }
     pub fn texture(&mut self,path: &Path) -> Result<&mut Self, LoadError> {
-        let reader = Reader::open(path);
+        let reader = ImageReader::open(path);
         if reader.is_err() {
             return Err(LoadError);
         }

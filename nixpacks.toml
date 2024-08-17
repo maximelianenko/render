@@ -1,2 +1,2 @@
 [variables]
-NIXPACKS_NO_MUSL=1
+NIXPACKS_NO_MUSL="1"
